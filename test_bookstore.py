@@ -206,6 +206,8 @@ def test_full_workflow(client):
     assert response.status_code == 404
 
 
+# added
+
 # ============================================================
 # PART D - Coverage (5 marks)
 # Run: pytest test_bookstore.py --cov=bookstore_db --cov=bookstore_app --cov-report=term-missing -v
