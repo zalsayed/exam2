@@ -89,124 +89,191 @@ def create_sample_book(
 # POST /books:
 #   - Create a valid book (check 201 and response body)
 def test_create_valid_book(client):
+    # Arrange is handeled by the helper
+    # Act
     response = create_sample_book(client)
+
+    # Assert
     assert response.status_code == 201
     assert "book" in response.get_json()
 
 
 #   - Create with missing title (check 400)
 def test_create_missing_title(client):
+    # Arrange is handeled by the helper
+    # Act
     response = client.post("/books", json={"author": "A", "price": 10})
+
+    # Assert
     assert response.status_code == 400
 
 
 #   - Create with empty author (check 400)
 def test_create_empty_author(client):
+    # Arrange is handeled by the helper
+    # Act
     response = client.post("/books", json={"title": "Book", "author": "", "price": 10})
+
+    # Assert
     assert response.status_code == 400
 
 
 #   - Create with invalid price (check 400)
 def test_create_invalid_price(client):
+    # Arrange is handeled by the helper
+    # Act
     response = client.post("/books", json={"title": "Book", "author": "A", "price": -5})
+
+    # Assert
     assert response.status_code == 400
 
 
 # GET /books:
 #   - List books when empty (check 200, empty list)
 def test_list_books_empty(client):
+    # Arrange is handeled by the helper
+    # Act
     response = client.get("/books")
+
+    # Assert
     assert response.status_code == 200
     assert response.get_json()["books"] == []
 
 
 #   - List books after adding 2+ books (check count)
 def test_list_books_after_adding(client):
+    # Arrange
     create_sample_book(client)
     create_sample_book(client, title="Book 2")
+
+    # Act
     response = client.get("/books")
+
+    # Assert
+    assert response.status_code == 200
     assert len(response.get_json()["books"]) == 2
 
 
 # GET /books/<id>:
 #   - Get an existing book (check 200)
 def test_get_existing_book(client):
+    # Arrange
     r = create_sample_book(client)
+
+    # Act
     book_id = r.get_json()["book"]["id"]
     response = client.get(f"/books/{book_id}")
+
+    # Assert
     assert response.status_code == 200
     assert response.get_json()["book"]["id"] == book_id
 
 
 #   - Get a non-existing book (check 404)
 def test_get_non_existing_book(client):
-    response = client.get("/books/999")
+    # Arrange & Act
+    response = client.get("/books/123456")
+
+    # Assert
     assert response.status_code == 404
 
 
 # PUT /books/<id>:
 #   - Update a book's title (check 200 and new value)
 def test_update_book_title(client):
+    # Arrange
     r = create_sample_book(client)
     book_id = r.get_json()["book"]["id"]
-    response = client.put(f"/books/{book_id}", json={"title": "New Title"})
+
+    # Act
+    response = client.put(f"/books/{book_id}", json={"title": "Title"})
+
+    # Assert
     assert response.status_code == 200
-    assert response.get_json()["book"]["title"] == "New Title"
+    assert response.get_json()["book"]["title"] == "Title"
 
 
 #   - Update with invalid price (check 400)
 def test_update_book_invalid_price(client):
+    # Arrange
     r = create_sample_book(client)
     book_id = r.get_json()["book"]["id"]
+
+    # Act
     response = client.put(f"/books/{book_id}", json={"price": -10})
+
+    # Assert
     assert response.status_code == 400
 
 
 #   - Update a non-existing book (check 404)
 def test_update_non_existing_book(client):
-    response = client.put("/books/999", json={"title": "X"})
+
+    # Arrange & Act
+    response = client.put("/books/78897", json={"title": "ZOO"})
+
+    # Assert
     assert response.status_code == 404
 
 
 # DELETE /books/<id>:
 #   - Delete an existing book (check 200, then confirm 404)
 def test_delete_existing_book(client):
+    # Arrange
     r = create_sample_book(client)
     book_id = r.get_json()["book"]["id"]
+
+    # Act delete
     response = client.delete(f"/books/{book_id}")
+
+    # Assert delete
     assert response.status_code == 200
+
+    # Act confirm delete
     response = client.get(f"/books/{book_id}")
+
+    # Assert confirm delete
     assert response.status_code == 404
 
 
 #   - Delete a non-existing book (check 404)
 def test_delete_non_existing_book(client):
-    response = client.delete("/books/999")
+    # Arrange & Act
+    response = client.delete("/books/789890")
+
+    # Assert
     assert response.status_code == 404
 
 
 # Full workflow:
 #   - Create -> Read -> Update -> Read again -> Delete -> Confirm gone
 def test_full_workflow(client):
+    # Arrange: Create a new book
     r = create_sample_book(client)
     book_id = r.get_json()["book"]["id"]
 
-    # Read
+    # Act & Assert: Read
     response = client.get(f"/books/{book_id}")
     assert response.status_code == 200
+    assert response.get_json()["book"]["id"] == book_id
 
-    # Update
-    client.put(f"/books/{book_id}", json={"title": "Updated"})
+    # Act & Assert: Update
+    update_response = client.put(f"/books/{book_id}", json={"title": "Updated"})
+    assert update_response.status_code == 200
+
+    # Act & Assert: Read again
     response = client.get(f"/books/{book_id}")
+    assert response.status_code == 200
     assert response.get_json()["book"]["title"] == "Updated"
 
-    # Delete
-    client.delete(f"/books/{book_id}")
+    # Act & Assert: Delete
+    delete_response = client.delete(f"/books/{book_id}")
+    assert delete_response.status_code == 200
+
+    # Act & Assert: Confirm gone
     response = client.get(f"/books/{book_id}")
     assert response.status_code == 404
 
-
-# added
 
 # ============================================================
 # PART D - Coverage (5 marks)
